@@ -1,7 +1,12 @@
 
 import { isEqual, isString, isDate, isArray, intersection, Dictionary, toPairs, isPlainObject, isEmpty, isUndefined } from 'lodash'
 
-const __BigInt = BigInt || Number
+let __BigInt
+try {
+  __BigInt = BigInt as Function
+} catch (error) {
+  __BigInt = Number
+}
 
 /**
  * 操作符

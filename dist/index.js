@@ -33,7 +33,13 @@ var __spread = (this && this.__spread) || function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ruleJudgment = exports.isDateString = exports.operators = void 0;
 var lodash_1 = require("lodash");
-var __BigInt = BigInt || Number;
+var __BigInt;
+try {
+    __BigInt = BigInt;
+}
+catch (error) {
+    __BigInt = Number;
+}
 exports.operators = {
     $lt: function (a, b) { return toValue(a) < toValue(b); },
     $lte: function (a, b) { return toValue(a) <= toValue(b); },

@@ -134,7 +134,7 @@ this repo is released under the [MIT License](https://github.com/kenote/rule-jud
 [npm-url]: https://www.npmjs.com/package/rule-judgment
 [downloads-image]: https://img.shields.io/npm/dm/rule-judgment.svg
 [downloads-url]: https://www.npmjs.com/package/rule-judgment
-[travis-image]: https://travis-ci.com/kenote/rule-judgment.svg?branch=master
+[travis-image]: https://travis-ci.com/kenote/rule-judgment.svg?branch=main
 [travis-url]: https://travis-ci.com/kenote/rule-judgment
 [licensed-image]: https://img.shields.io/badge/license-MIT-blue.svg
 [licensed-url]: https://github.com/kenote/rule-judgment/blob/master/LICENSE

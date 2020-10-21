@@ -1,5 +1,5 @@
 
-import { isEqual, isString, isDate, isArray, intersection, toPairs, isPlainObject, isEmpty, isUndefined, isNumber, isNull } from 'lodash'
+import { isEqual, isString, isDate, isArray, intersection, toPairs, isPlainObject, isEmpty, isUndefined, isNumber, isNull, result } from 'lodash'
 
 let __BigInt
 try {
@@ -171,12 +171,11 @@ function calculation (data: any, query: Partial<any>): boolean {
         __result.push(calculation(data, value))
       }
       else {
-        __result.push(calculation(data[operator], value))
+        __result.push(calculation(result(data, operator), value))
       }
-      
     }
     else {
-      __result.push(operators.$eq(data[operator], value))
+      __result.push(operators.$eq(result(data, operator), value))
     }
   }
   return operators.$and(...__result)
@@ -192,7 +191,7 @@ function calculationJoin (data: any, query: Array<Partial<any>>, mode: '$and' | 
   let __result: boolean[] = []
   for (let item of query) {
     for (let key in item) {
-      __result.push(calculation(isPlainObject(data) ? data : data, item))
+      __result.push(calculation(data, item))
     }
   }
   return operators[mode](...__result)

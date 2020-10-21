@@ -149,11 +149,11 @@ function calculation(data, query) {
                     __result.push(calculation(data, value));
                 }
                 else {
-                    __result.push(calculation(data[operator], value));
+                    __result.push(calculation(lodash_1.result(data, operator), value));
                 }
             }
             else {
-                __result.push(operators.$eq(data[operator], value));
+                __result.push(operators.$eq(lodash_1.result(data, operator), value));
             }
         }
     }
@@ -174,7 +174,7 @@ function calculationJoin(data, query, mode) {
         for (var query_1 = __values(query), query_1_1 = query_1.next(); !query_1_1.done; query_1_1 = query_1.next()) {
             var item = query_1_1.value;
             for (var key in item) {
-                __result.push(calculation(lodash_1.isPlainObject(data) ? data : data, item));
+                __result.push(calculation(data, item));
             }
         }
     }

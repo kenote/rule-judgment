@@ -1,5 +1,5 @@
 
-import { isEqual, isString, isDate, isArray, intersection, Dictionary, toPairs, isPlainObject, isEmpty, isUndefined } from 'lodash'
+import { isEqual, isString, isDate, isArray, intersection, toPairs, isPlainObject, isEmpty, isUndefined, isNumber, isNull } from 'lodash'
 
 let __BigInt
 try {
@@ -11,7 +11,7 @@ try {
 /**
  * 操作符
  */
-export const operators = {
+const operators = {
   /**
    * 小于
    */
@@ -86,19 +86,36 @@ export const operators = {
   /**
    * 数组长度
    */
-  $size: (a: any[], query: Dictionary<any>) => calculation(a.length, query),
+  $size: (a: any[], query: Partial<any> | number) => {
+    if (isNumber(query)) {
+      return a.length === query
+    }
+    return calculation(a.length, query)
+  },
   /**
    * 判断字段是否存在
    */
-  $exists: (a: any, exists: boolean) => isUndefined(a) != exists,
+  $exists: (a: any, exists: boolean) => (isNull(a) || isUndefined(a)) != exists,
+  /**
+   * 判断类型
+   */
+  $type: (a: any, type: string) => typeof a === type,
+  /**
+   * Not 连接
+   */
+  $not: (a: any, query: Partial<any>) => !calculation(a, query),
   /**
    * Or 连接
    */
-  $or: (...__result: boolean[]) => evil(__result.map(String).join(' || ')),
+  $or: (...__result: boolean[]) => emit(__result.map(String).join(' || ')),
+  /**
+   * Nor 连接
+   */
+  $nor: (...__result: boolean[]) => !emit(__result.map(String).join(' || ')),
   /**
    * And 连接
    */
-  $and: (...__result: boolean[]) => evil(__result.map(String).join(' && '))
+  $and: (...__result: boolean[]) => emit(__result.map(String).join(' && '))
 }
 
 /**
@@ -136,12 +153,15 @@ function toValue (value: any): any {
  * @param data 
  * @param query 
  */
-function calculation (data: any, query: Dictionary<any>): boolean {
+function calculation (data: any, query: Partial<any>): boolean {
   let __result: boolean[] = []
   for (let pairs of toPairs(query)) {
     let [ operator, value ] = pairs
-    if (['$and', '$or'].includes(operator)) {
-      __result.push(calculationJoin(data, value, operator as '$and' | '$or'))
+    if (['$and', '$or', '$nor'].includes(operator)) {
+      __result.push(calculationJoin(data, value, operator as '$and' | '$or' | '$nor'))
+    }
+    else if (operator === '$where') {
+      __result.push(query['$where'](data))
     }
     else if (/^\$/.test(operator)) {
       __result.push(operators[operator](data, value))
@@ -168,7 +188,7 @@ function calculation (data: any, query: Dictionary<any>): boolean {
  * @param query 
  * @param mode 
  */
-function calculationJoin (data: any, query: Array<Dictionary<any>>, mode: '$and' | '$or' = '$and'): boolean {
+function calculationJoin (data: any, query: Array<Partial<any>>, mode: '$and' | '$or' | '$nor' = '$and'): boolean {
   let __result: boolean[] = []
   for (let item of query) {
     for (let key in item) {
@@ -178,12 +198,13 @@ function calculationJoin (data: any, query: Array<Dictionary<any>>, mode: '$and'
   return operators[mode](...__result)
 }
 
-export function ruleJudgment (data: any, query: Dictionary<any>): boolean {
+function judgment (data: any, query: Partial<any>, options?: Partial<any>): boolean {
   if (isEmpty(query)) return true
+  query = parseAssign(query, options)
   let __result: boolean[] = []
   for (let key in query) {
-    if (['$and', '$or'].includes(key)) {
-      __result.push(calculationJoin(data, query[key], key as '$and' | '$or'))
+    if (['$and', '$or', '$nor'].includes(key)) {
+      __result.push(calculationJoin(data, query[key], key as '$and' | '$or' | '$nor'))
     }
     else {
       __result.push(calculation(data, isPlainObject(query[key]) && !isOperator(query[key]) ? query[key] : query))
@@ -192,7 +213,7 @@ export function ruleJudgment (data: any, query: Dictionary<any>): boolean {
   return operators.$and(...__result)
 }
 
-function isOperator (query: Dictionary<any>): boolean {
+function isOperator (query: Partial<any>): boolean {
   for (let key of Object.keys(query)) {
     if (/^\$/.test(key)) {
       return true
@@ -201,7 +222,39 @@ function isOperator (query: Dictionary<any>): boolean {
   return false
 }
 
-function evil (value: string): any {
-  let fn = Function;
+export function emit (value: string): any {
+  let fn = Function
   return new fn('return ' + value)()
 }
+
+export function parseAssign (data: any, options?: Partial<any>): any {
+  if (!isPlainObject(options)) return data
+  let str = JSON.stringify(data)
+  for (let item of toPairs(options)) {
+    let [ search, value ] = assign(...item)
+    if (/^\$/.test(item[0])) {
+      str = str.replace(search, value)
+    }
+  }
+  return JSON.parse(str)
+}
+
+function assign (key: string, value: any): [ RegExp, any ] {
+  let search: RegExp
+  let str = /^\$/.test(key) ? `\\${key}` : key
+  if (isString(value)) {
+    search = new RegExp(`${str}`, 'gi')
+  }
+  else {
+    search = new RegExp(`\\"(${str})\\"`, 'gi')
+  }
+  return [ search, value ]
+}
+
+function ruleJudgment (query: Partial<any>, options?: Partial<any>): (data: any) => boolean {
+  return function (data: any): boolean {
+    return judgment(data, query, options)
+  }
+}
+
+export default ruleJudgment.bind(this)

@@ -31,7 +31,7 @@ var __spread = (this && this.__spread) || function () {
     return ar;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ruleJudgment = exports.isDateString = exports.operators = void 0;
+exports.parseAssign = exports.emit = exports.isDateString = void 0;
 var lodash_1 = require("lodash");
 var __BigInt;
 try {
@@ -40,7 +40,7 @@ try {
 catch (error) {
     __BigInt = Number;
 }
-exports.operators = {
+var operators = {
     $lt: function (a, b) { return toValue(a) < toValue(b); },
     $lte: function (a, b) { return toValue(a) <= toValue(b); },
     $gt: function (a, b) { return toValue(a) > toValue(b); },
@@ -76,21 +76,35 @@ exports.operators = {
         }
         return !toValue(a).includes(toValue(b));
     },
-    $size: function (a, query) { return calculation(a.length, query); },
-    $exists: function (a, exists) { return lodash_1.isUndefined(a) != exists; },
+    $size: function (a, query) {
+        if (lodash_1.isNumber(query)) {
+            return a.length === query;
+        }
+        return calculation(a.length, query);
+    },
+    $exists: function (a, exists) { return (lodash_1.isNull(a) || lodash_1.isUndefined(a)) != exists; },
+    $type: function (a, type) { return typeof a === type; },
+    $not: function (a, query) { return !calculation(a, query); },
     $or: function () {
         var __result = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             __result[_i] = arguments[_i];
         }
-        return evil(__result.map(String).join(' || '));
+        return emit(__result.map(String).join(' || '));
+    },
+    $nor: function () {
+        var __result = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            __result[_i] = arguments[_i];
+        }
+        return !emit(__result.map(String).join(' || '));
     },
     $and: function () {
         var __result = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             __result[_i] = arguments[_i];
         }
-        return evil(__result.map(String).join(' && '));
+        return emit(__result.map(String).join(' && '));
     }
 };
 function isDateString(value) {
@@ -121,11 +135,14 @@ function calculation(data, query) {
         for (var _b = __values(lodash_1.toPairs(query)), _c = _b.next(); !_c.done; _c = _b.next()) {
             var pairs = _c.value;
             var _d = __read(pairs, 2), operator = _d[0], value = _d[1];
-            if (['$and', '$or'].includes(operator)) {
+            if (['$and', '$or', '$nor'].includes(operator)) {
                 __result.push(calculationJoin(data, value, operator));
             }
+            else if (operator === '$where') {
+                __result.push(query['$where'](data));
+            }
             else if (/^\$/.test(operator)) {
-                __result.push(exports.operators[operator](data, value));
+                __result.push(operators[operator](data, value));
             }
             else if (lodash_1.isPlainObject(value)) {
                 if (/^\$/.test(operator)) {
@@ -136,7 +153,7 @@ function calculation(data, query) {
                 }
             }
             else {
-                __result.push(exports.operators.$eq(data[operator], value));
+                __result.push(operators.$eq(data[operator], value));
             }
         }
     }
@@ -147,7 +164,7 @@ function calculation(data, query) {
         }
         finally { if (e_1) throw e_1.error; }
     }
-    return exports.operators.$and.apply(exports.operators, __spread(__result));
+    return operators.$and.apply(operators, __spread(__result));
 }
 function calculationJoin(data, query, mode) {
     var e_2, _a;
@@ -168,23 +185,23 @@ function calculationJoin(data, query, mode) {
         }
         finally { if (e_2) throw e_2.error; }
     }
-    return exports.operators[mode].apply(exports.operators, __spread(__result));
+    return operators[mode].apply(operators, __spread(__result));
 }
-function ruleJudgment(data, query) {
+function judgment(data, query, options) {
     if (lodash_1.isEmpty(query))
         return true;
+    query = parseAssign(query, options);
     var __result = [];
     for (var key in query) {
-        if (['$and', '$or'].includes(key)) {
+        if (['$and', '$or', '$nor'].includes(key)) {
             __result.push(calculationJoin(data, query[key], key));
         }
         else {
             __result.push(calculation(data, lodash_1.isPlainObject(query[key]) && !isOperator(query[key]) ? query[key] : query));
         }
     }
-    return exports.operators.$and.apply(exports.operators, __spread(__result));
+    return operators.$and.apply(operators, __spread(__result));
 }
-exports.ruleJudgment = ruleJudgment;
 function isOperator(query) {
     var e_3, _a;
     try {
@@ -204,7 +221,49 @@ function isOperator(query) {
     }
     return false;
 }
-function evil(value) {
+function emit(value) {
     var fn = Function;
     return new fn('return ' + value)();
 }
+exports.emit = emit;
+function parseAssign(data, options) {
+    var e_4, _a;
+    if (!lodash_1.isPlainObject(options))
+        return data;
+    var str = JSON.stringify(data);
+    try {
+        for (var _b = __values(lodash_1.toPairs(options)), _c = _b.next(); !_c.done; _c = _b.next()) {
+            var item = _c.value;
+            var _d = __read(assign.apply(void 0, __spread(item)), 2), search = _d[0], value = _d[1];
+            if (/^\$/.test(item[0])) {
+                str = str.replace(search, value);
+            }
+        }
+    }
+    catch (e_4_1) { e_4 = { error: e_4_1 }; }
+    finally {
+        try {
+            if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+        }
+        finally { if (e_4) throw e_4.error; }
+    }
+    return JSON.parse(str);
+}
+exports.parseAssign = parseAssign;
+function assign(key, value) {
+    var search;
+    var str = /^\$/.test(key) ? "\\" + key : key;
+    if (lodash_1.isString(value)) {
+        search = new RegExp("" + str, 'gi');
+    }
+    else {
+        search = new RegExp("\\\"(" + str + ")\\\"", 'gi');
+    }
+    return [search, value];
+}
+function ruleJudgment(query, options) {
+    return function (data) {
+        return judgment(data, query, options);
+    };
+}
+exports.default = ruleJudgment.bind(this);

@@ -15,116 +15,270 @@ $ npm install rule-judgment
 $ yarn add rule-judgment
 ```
 
-## Usages
-
-```ts
-import { operators, ruleJudgment } = 'rule-judgment'
-
-console.log( '3 < 5 =', operators.$lt(3, 5) )
-// 3 < 5 = true
-
-console.log( '3 <= 5 =', operators.$lte(3, 5) )
-// 3 <= 5 = true
-
-console.log( '3 > 5 =', operators.$gt(3, 5) )
-// 3 > 5 = false
-
-console.log( '3 >= 5 =', operators.$gte(3, 5) )
-// 3 >= 5 = false
-
-console.log( '3 === 3 =', operators.$eq(3, 3) )
-// 3 === 3 = true
-
-console.log( 'test === test =', operators.$eq('test', 'test') )
-// test === test = true
-
-console.log( '[] === [] =', operators.$eq([], []) )
-// [] === [] = true
-
-console.log( '{} === {} =', operators.$eq({}, {}) )
-// {} === {} = true
-
-console.log( '3 != 3 =', operators.$ne(3, 3) )
-// 3 != 3 = false
-
-console.log( 'test != test =', operators.$ne('test', 'test') )
-// test != test = false
-
-console.log( '[] != [] =', operators.$ne([], []) )
-// [] != [] = false
-
-console.log( '{} != {} =', operators.$ne({}, {}) )
-// {} != {} = false
-
-console.log( '/test/i.test(\'test\') =', operators.$regex('test', /test/i) )
-// /test/i.test('test') = true
-
-console.log( '7 % 6 === 1 =', operators.$mod(7, [6, 1]) )
-// 7 % 6 === 1 = true
-
-console.log( '[\'email\', \'mobile\'].includes(\'email\') =', operators.$in('email', ['email', 'mobile']) )
-// ['email', 'mobile'].includes('email') = true
-
-console.log( '![\'github\', \'mobile\'].includes(\'email\') =', operators.$nin('github', ['email', 'mobile']) )
-// !['email', 'mobile'].includes('github') = true
-
-console.log( '[\'email\', \'mobile\'].includes(\'email\') =', operators.$_in(['email', 'mobile'], 'email') )
-// ['email', 'mobile'].includes('email') = true
-
-console.log( '![\'email\', \'mobile\'].includes(\'github\') =', operators.$_nin(['email', 'mobile'], 'github') )
-// !['email', 'mobile'].includes('github') = true
-
-console.log( '[\'email\', \'mobile\'].length === 2 =', operators.$size(['email', 'mobile'], { $eq: 2 }) )
-// ['email', 'mobile'].length === 2 = true
-
-const data = {
-  username: 'thondery',
-  email: 'thondery@163.com',
-  binds: [ 'email', 'mobile', 'github'],
-  min: 3,
-  max: 5
-}
-
-let result = ruleJudgment(data, {
-  $or: [
-    { username: { $regex: /thondery/i } },
-    { email: 'thondery@163.com' },
-    { binds: { $_in: 'github' } },
-    { username: { $in: ['admin', 'thondery'] } },
-    { binds: { 
-      $size: { 
-        $and: [
-      	  { $lt: 5 },
-          { $gt: 2 },
-          { $mod: [ 2, 1 ] }
-        ]
-      }
-    }}
-  ]
-})
-
-console.log(result)
-// true
-```
-
 ## Features
 
-- $lt
-- $lte
-- $gt
-- $gte
-- $eq
-- $ne
-- $regex
-- $mod
-- $in
-- $nin
-- $_in
-- $_nin
-- $size
-- $exists
-- $and
-- $or
+- Supported operators: [\$lt](#lt), [\$lte](#lte), [\$gt](#gt), [\$gte](#gte), [\$eq](#eq), [\$ne](#ne), [\$regex](#regex), [\$mod](#mod), [\$in](#in), [\$nin](#nin), [\$size](#size), [\$exists](#exists), [\$type](#type), [\$where](#where), [\$and](#and), [\$or](#or), [\$not](#not), [\$nor](#nor)
+- Regexp searches
+- Supports node.js, and web
+
+## Usages
+
+```js
+import ruleJudgment from 'rule-judgment'
+
+// target data is non-object data
+const filter = ruleJudgment({ $lt: 5 })
+
+// target data is object data
+const filter = ruleJudgment({ level: { $lt: 5 } })
+
+// use context
+const context = {
+  $__username: 'thondery',
+  $__level: 5
+}
+const filter = ruleJudgment({ 
+  $or: [
+    { username: '$__username' },
+    { level: { $gte: '$__level' }}
+  ] 
+}, context)
+
+[
+  { username: 'admin', level: 9 },
+  { username: 'thondery', level: 5 },
+  { username: 'test', level: 1 },
+].filter( filter )
+// [ { username: 'admin', level: 9 }, { username: 'thondery', level: 5 } ]
+```
+
+## API
+
+### ruleJudgment (query: MongoQuery, options?: Options): (data: any) => boolean
+
+Creates a filter with all of the built-in MongoDB query operations.
+
+- `query` - the filter to use against the target data
+- `options` - `context` hash
+- `data` - target data
+
+Example:
+
+```js
+import ruleJudgment from 'rule-judgment'
+
+const filter = ruleJudgment({ $lt: 5 })
+
+filter(6) // false
+filter(4) // true
+
+[0, 1, 2, 3, 4, 5].filter( filter )
+// [0, 1, 2, 3, 4]
+```
+
+## Supported Operators
+
+### \$lt
+
+Matches values that are less than a specified value.
+
+```js
+// types: number | bigint | Date
+
+[0, 1, 2, 3, 4, 5].filter( ruleJudgment({ $lt: 3 }) )
+// [0, 1, 2]
+```
+
+### \$lte
+
+Matches values that are less than or equal to a specified value.
+
+```js
+// types: number | bigint | Date
+
+[0, 1, 2, 3, 4, 5].filter( ruleJudgment({ $lte: 3 }) )
+// [0, 1, 2, 3]
+```
+
+### \$gt
+
+Matches values that are greater than a specified value.
+
+```js
+// types: number | bigint | Date
+
+[0, 1, 2, 3, 4, 5].filter( ruleJudgment({ $gt: 3 }) )
+// [4, 5]
+```
+
+### \$gte
+
+Matches values that are greater than or equal to a specified value.
+
+```js
+// types: number | bigint | Date
+
+[0, 1, 2, 3, 4, 5].filter( ruleJudgment({ $gte: 3 }) )
+// [3, 4, 5]
+```
+
+### \$eq
+
+Matches values that are equal to a specified value.
+
+```js
+// types: any
+
+['admin', 'thondery', 'test'].filter( ruleJudgment({ $eq: 'thondery' }) )
+// ['thondery']
+```
+
+### \$ne
+
+Matches all values that are not equal to a specified value.
+
+```js
+// types: any
+
+['admin', 'thondery', 'test'].filter( ruleJudgment({ $ne: 'thondery' }) )
+// ['admin', 'test']
+```
+
+### \$regex
+
+Selects documents where values match a specified regular expression.
+
+```js
+// types: string
+
+['admin', 'thondery', 'test'].filter( ruleJudgment({ $regex: /thondery/i }) )
+// ['thondery']
+```
+
+### \$mod
+
+Performs a modulo operation on the value of a field and selects documents with a specified result.
+
+```js
+// types: number | bigint
+
+[0, 1, 2, 3, 4, 5].filter( ruleJudgment({ $mod: [2, 0] }) )
+// [0, 2, 4]
+```
+
+### \$in
+
+Matches any of the values specified in an array.
+
+```js
+// types: any
+
+['admin', 'thondery', 'test'].filter( ruleJudgment({ $in: ['thondery', 'admin'] }) )
+// ['admin', 'thondery']
+```
+
+### \$nin
+
+Matches none of the values specified in an array.
+
+```js
+// types: any
+
+['admin', 'thondery', 'test'].filter( ruleJudgment({ $nin: ['thondery', 'admin'] }) )
+// ['test']
+```
+
+### \$size
+
+Selects documents if the array field is a specified size.
+
+```js
+// types: any[]
+
+[['admin', 'thondery', 'test'], [0, 1, 2, 3, 4, 5]].filter( ruleJudgment({ $size: 6 }) )
+// [ [0, 1, 2, 3, 4, 5] ]
+[['admin', 'thondery', 'test'], [0, 1, 2, 3, 4, 5]].filter( ruleJudgment({ $size: { $lt: 5 } }) )
+// [ ['admin', 'thondery', 'test'] ]
+```
+
+### \$exists
+
+Matches documents that have the specified field.
+
+```js
+// types: any
+
+['test', 0, 1, 2, 3, null, undefined, true, false].filter( ruleJudgment({ $exists: true }) )
+// ['test', 0, 1, 2, 3, true, false]
+['test', 0, 1, 2, 3, null, undefined, true, false].filter( ruleJudgment({ $exists: false }) )
+// [null, undefined]
+```
+
+### \$type
+
+Selects documents if a field is of the specified type.
+
+```js
+// types: any
+
+['test', 0, 1, 2, 3, null, undefined, true, false].filter( ruleJudgment({ $type: 'number' }) )
+// [0, 1, 2, 3]
+```
+
+### \$where
+
+Matches documents that satisfy a JavaScript expression.
+
+```js
+// types: any
+
+['test', 0, 1, 2, 3, null, undefined, true, false].filter( ruleJudgment({ $where: item => item === 'test' }) )
+// ['test']
+```
+
+### \$and
+
+Joins query clauses with a logical AND returns all documents that match the conditions of both clauses.
+
+```js
+// types: any
+
+['test', 0, 1, 2, 3, null, undefined, true, false].filter( ruleJudgment({ $and: [{ $eq: 'test' }, { $type: 'string' }] }) )
+// ['test']
+```
+
+### \$or
+
+Joins query clauses with a logical OR returns all documents that match the conditions of either clause.
+
+```js
+// types: any
+
+['test', 0, 1, 2, 3, null, undefined, true, false].filter( ruleJudgment({ $or: [{ $eq: 'test' }, { $type: 'boolean' }] }) )
+// ['test', true, false]
+```
+
+### \$not
+
+Inverts the effect of a query expression and returns documents that do not match the query expression.
+
+```js
+// types: any
+
+['test', 0, 1, 2, 3, null, undefined, true, false].filter( ruleJudgment({ $not: { $eq: 'test' } }) )
+// [0, 1, 2, 3, null, undefined, true, false]
+```
+
+### \$nor
+
+Joins query clauses with a logical NOR returns all documents that fail to match both clauses.
+
+```js
+// types: any
+
+['test', 0, 1, 2, 3, null, undefined, true, false].filter( ruleJudgment({ $or: [{ $eq: 'test' }, { $type: 'boolean' }] }) )
+// [0, 1, 2, 3, null, undefined]
+```
 
 ## License
 

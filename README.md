@@ -276,13 +276,13 @@ Joins query clauses with a logical NOR returns all documents that fail to match 
 ```js
 // types: any
 
-['test', 0, 1, 2, 3, null, undefined, true, false].filter( ruleJudgment({ $or: [{ $eq: 'test' }, { $type: 'boolean' }] }) )
+['test', 0, 1, 2, 3, null, undefined, true, false].filter( ruleJudgment({ $nor: [{ $eq: 'test' }, { $type: 'boolean' }] }) )
 // [0, 1, 2, 3, null, undefined]
 ```
 
 ## License
 
-this repo is released under the [MIT License](https://github.com/kenote/rule-judgment/blob/master/LICENSE).
+this repo is released under the [MIT License](https://github.com/kenote/rule-judgment/blob/main/LICENSE).
 
 [npm-image]: https://img.shields.io/npm/v/rule-judgment.svg
 [npm-url]: https://www.npmjs.com/package/rule-judgment
@@ -291,4 +291,4 @@ this repo is released under the [MIT License](https://github.com/kenote/rule-jud
 [travis-image]: https://travis-ci.com/kenote/rule-judgment.svg?branch=main
 [travis-url]: https://travis-ci.com/kenote/rule-judgment
 [licensed-image]: https://img.shields.io/badge/license-MIT-blue.svg
-[licensed-url]: https://github.com/kenote/rule-judgment/blob/master/LICENSE
+[licensed-url]: https://github.com/kenote/rule-judgment/blob/main/LICENSE

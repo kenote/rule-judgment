@@ -1,6 +1,6 @@
 
-export function parseAssign (data: unknown, options?: Partial<unknown>): unknown
+export function parseAssign (data: any, options?: Partial<any>): any
 export function isDateString (value: string): boolean
-export function emit (value: string): unknown
+export function emit (value: string): any
 
-export default function (query: Partial<unknown>, options?: Partial<unknown>): (data: unknown) => boolean
+export default function (query: Partial<any>, options?: Partial<any>): (data: any) => boolean

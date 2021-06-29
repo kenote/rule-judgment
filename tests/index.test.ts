@@ -64,6 +64,22 @@ describe('\nTests', () => {
       let result = ruleJudgment({ $nin: ['thondery', 'admin'] })('test')
       expect(result).toBe(true)
     })
+    test('Operator $_in: [\'thondery\', \'admin\'] of \'thondery\'', () => {
+      let result = ruleJudgment({ $_in: 'thondery' })(['thondery', 'admin'])
+      expect(result).toBe(true)
+    })
+    test('Operator $_in: [\'thondery\', \'admin\'] of [\'thondery\']', () => {
+      let result = ruleJudgment({ $_in: ['thondery'] })(['thondery', 'admin'])
+      expect(result).toBe(true)
+    })
+    test('Operator $_nin: [\'thondery\', \'admin\'] not of \'test\'', () => {
+      let result = ruleJudgment({ $_nin: 'test' })(['thondery', 'admin'])
+      expect(result).toBe(true)
+    })
+    test('Operator $_nin: [\'thondery\', \'admin\'] not of [\'test\']', () => {
+      let result = ruleJudgment({ $_nin: ['test'] })(['thondery', 'admin'])
+      expect(result).toBe(true)
+    })
     test('Operator $size: [\'thondery\', \'admin\'].length === 2', () => {
       let result = ruleJudgment({ $size: 2 })(['thondery', 'admin'])
       expect(result).toBe(true)

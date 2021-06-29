@@ -17,7 +17,7 @@ $ yarn add rule-judgment
 
 ## Features
 
-- Supported operators: [\$lt](#lt), [\$lte](#lte), [\$gt](#gt), [\$gte](#gte), [\$eq](#eq), [\$ne](#ne), [\$regex](#regex), [\$mod](#mod), [\$in](#in), [\$nin](#nin), [\$size](#size), [\$exists](#exists), [\$type](#type), [\$where](#where), [\$and](#and), [\$or](#or), [\$not](#not), [\$nor](#nor)
+- Supported operators: [\$lt](#lt), [\$lte](#lte), [\$gt](#gt), [\$gte](#gte), [\$eq](#eq), [\$ne](#ne), [\$regex](#regex), [\$mod](#mod), [\$in](#in), [\$nin](#nin), [\$_in](#-in), [\$_nin](#-nin), [\$size](#size), [\$exists](#exists), [\$type](#type), [\$where](#where), [\$and](#and), [\$or](#or), [\$not](#not), [\$nor](#nor)
 - Regexp searches
 - Supports node.js, and web
 
@@ -186,6 +186,32 @@ Matches none of the values specified in an array.
 
 ['admin', 'thondery', 'test'].filter( ruleJudgment({ $nin: ['thondery', 'admin'] }) )
 // ['test']
+```
+
+### \$_in
+
+Match any value in the array.
+
+```js
+// types: any[]
+
+ruleJudgment({ $_in: 'thondery' })(['admin', 'thondery', 'test'])
+// true
+ruleJudgment({ $_in: ['admin', 'thondery'] })(['admin', 'thondery', 'test'])
+// true
+```
+
+### \$_nin
+
+Match any value not in the array.
+
+```js
+// types: any[]
+
+ruleJudgment({ $_nin: 'thondery' })(['admin', 'thondery', 'test'])
+// false
+ruleJudgment({ $_nin: ['admin', 'thondery'] })(['admin', 'thondery', 'test'])
+// false
 ```
 
 ### \$size

@@ -1,5 +1,6 @@
 
 import { isEqual, isString, isDate, isArray, intersection, toPairs, isPlainObject, isEmpty, isUndefined, isNumber, isNull, result } from 'lodash'
+import { FilterQuery, QuerySelector } from '../types'
 
 let __BigInt
 try {
@@ -250,7 +251,7 @@ function assign (key: string, value: any): [ RegExp, any ] {
   return [ search, value ]
 }
 
-function ruleJudgment (query: Partial<any>, options?: Partial<any>): (data: any) => boolean {
+function ruleJudgment<T = any> (query: T extends object ? FilterQuery<T> : QuerySelector<T>, options?: Partial<any>): (data: any) => boolean {
   return function (data: any): boolean {
     return judgment(data, query, options)
   }

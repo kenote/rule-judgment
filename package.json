@@ -1,6 +1,6 @@
 {
   "name": "rule-judgment",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "A query statement similar to mongodb, judge and retrieve data.",
   "main": "dist/index.js",
   "typings": "types/index.d.ts",

@@ -164,11 +164,11 @@ function calculation (data: any, query: Partial<any>): boolean {
     else if (operator === '$where') {
       __result.push(query['$where'](data))
     }
-    else if (/^\$/.test(operator)) {
+    else if (/^\$((?!\.).)*$/.test(operator)) {
       __result.push(operators[operator](data, value))
     }
     else if (isPlainObject(value)) {
-      if (/^\$/.test(operator)) {
+      if (/^\$((?!\.).)*$/.test(operator)) {
         __result.push(calculation(data, value))
       }
       else {
